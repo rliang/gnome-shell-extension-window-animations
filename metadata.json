@@ -1,0 +1,12 @@
+{
+  "name": "Window Animations",
+  "uuid": "window-animations@rliang.github.com",
+  "description": "Adds transitions on window focus, move and resize.",
+  "url": "https://github.com/rliang/gnome-shell-window-animations",
+  "shell-version": [
+    "3.14",
+    "3.16",
+    "3.18",
+    "3.20"
+  ]
+}
