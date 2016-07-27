@@ -47,12 +47,12 @@ class OnCloseAnimation extends WindowAnimation {
 const focus = new WindowFocusAnimation();
 const close = new OnCloseAnimation();
 
-function enable() {
+export function enable() {
   focus.enable();
   close.enable();
 }
 
-function disable() {
+export function disable() {
   focus.disable();
   close.disable();
 }
