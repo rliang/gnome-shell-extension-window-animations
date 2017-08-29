@@ -34,7 +34,7 @@ function doSizeChanged(actor) {
   const ra = _oldrects[getId(actor)];
   const rb = actor.meta_window.get_frame_rect();
   _oldrects[getId(actor)] = rb;
-  if (!_enabled || isExcluded(actor))
+  if (!_enabled || !ra || isExcluded(actor))
     return;
   Tweener.addTween(actor, {
     transition: settings.get_string('animation-transition'),
