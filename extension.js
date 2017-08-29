@@ -1,52 +1,58 @@
+const Gio = imports.gi.Gio;
+const Meta = imports.gi.Meta;
 const Tweener = imports.ui.tweener;
+const Me = imports.misc.extensionUtils.getCurrentExtension();
+
+const SchemaSource = Gio.SettingsSchemaSource.new_from_directory(
+  Me.dir.get_path(), Gio.SettingsSchemaSource.get_default(), false);
+const settings = new Gio.Settings({
+  settings_schema: SchemaSource.lookup(Me.metadata['settings-schema'], true)
+});
+
+const _oldrects = {};
+
+function getId(actor) {
+  return actor.meta_window.get_stable_sequence();
+}
+
+function isExcluded(actor) {
+  const types = settings.get_value('exclude-window-types').deep_unpack();
+  return types.some(t => actor.meta_window.window_type === Meta.WindowType[t]);
+}
+
+function doMap(actor) {
+  _oldrects[getId(actor)] = actor.meta_window.get_frame_rect();
+}
+
+function doDestroy(actor) {
+  delete _oldrects[getId(actor)];
+}
 
 let _enabled = false;
 
-let _oldrects = {};
-
-function windowRefreshSize(win) {
-  if (!_enabled)
+function doSizeChanged(actor) {
+  const ra = _oldrects[getId(actor)];
+  const rb = actor.meta_window.get_frame_rect();
+  _oldrects[getId(actor)] = rb;
+  if (!_enabled || isExcluded(actor))
     return;
-  const actr = win.get_compositor_private();
-  const rect = win.get_frame_rect();
-  const oldr = _oldrects[win.get_stable_sequence()];
-  Tweener.addTween(actr, {
-    transition: 'easeOutQuad',
-    time: 0.25,
+  Tweener.addTween(actor, {
+    transition: settings.get_string('animation-transition'),
+    time: settings.get_double('animation-duration'),
     scale_x: 1,
     scale_y: 1,
-    onStart: () => {
-      _oldrects[win.get_stable_sequence()] = rect;
-      actr.set_pivot_point(0, 0);
-      actr.set_scale(oldr.width / rect.width, oldr.height / rect.height);
-    }
-  });
-}
-
-function windowRefreshPosition(win) {
-  if (!_enabled)
-    return;
-  const actr = win.get_compositor_private();
-  const rect = win.get_frame_rect();
-  const oldr = _oldrects[win.get_stable_sequence()];
-  Tweener.addTween(actr, {
-    transition: 'easeOutQuad',
-    time: 0.25,
     translation_x: 0,
     translation_y: 0,
-    onStart: () => {
-      _oldrects[win.get_stable_sequence()] = rect;
-      actr.translation_x = oldr.x - rect.x;
-      actr.translation_y = oldr.y - rect.y;
-    }
+    onStart: (actor, ra, rb) => {
+      if ((actor.translation_x = ra.x - rb.x) > 0)
+        actor.translation_x -= (rb.width - ra.width);
+      if ((actor.translation_y = ra.y - rb.y) > 0)
+        actor.translation_y -= (rb.height - ra.height);
+      actor.set_pivot_point(rb.x >= ra.x ? 0 : 1, rb.y >= ra.y ? 0 : 1);
+      actor.set_scale(ra.width / rb.width, ra.height / rb.height);
+    },
+    onStartParams: [actor, ra, rb]
   });
-}
-
-function windowInit(win) {
-  _oldrects[win.get_stable_sequence()] = win.get_frame_rect();
-  win.connect('unmanaged', win => delete _oldrects[win.get_stable_sequence()]);
-  win.connect('size-changed', windowRefreshSize);
-  win.connect('position-changed', windowRefreshPosition);
 }
 
 function enable() {
@@ -58,7 +64,8 @@ function disable() {
 }
 
 function init() {
-  global.get_window_actors().forEach(win => windowInit(win.meta_window));
-  global.display.connect('window-created', (ds, win) => windowInit(win));
+  global.get_window_actors().forEach(doMap);
+  global.window_manager.connect('map', (_, actor) => doMap(actor));
+  global.window_manager.connect('destroy', (_, actor) => doDestroy(actor));
+  global.window_manager.connect('size-changed', (_, actor) => doSizeChanged(actor));
 }
-
