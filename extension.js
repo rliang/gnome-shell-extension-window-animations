@@ -15,8 +15,8 @@ function getId(actor) {
   return actor.meta_window.get_stable_sequence();
 }
 
-function isExcluded(actor) {
-  const types = settings.get_value('exclude-window-types').deep_unpack();
+function isValid(actor) {
+  const types = settings.get_value('window-types').deep_unpack();
   return types.some(t => actor.meta_window.window_type === Meta.WindowType[t]);
 }
 
@@ -34,7 +34,7 @@ function doSizeChanged(actor) {
   const ra = _oldrects[getId(actor)];
   const rb = actor.meta_window.get_frame_rect();
   _oldrects[getId(actor)] = rb;
-  if (!_enabled || !ra || isExcluded(actor))
+  if (!_enabled || !ra || !isValid(actor))
     return;
   Tweener.addTween(actor, {
     transition: settings.get_string('animation-transition'),

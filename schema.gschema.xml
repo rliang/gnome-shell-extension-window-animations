@@ -39,11 +39,29 @@
         The animation duration in seconds.
       </description>
     </key>
-    <key name="exclude-window-types" type="as">
-      <default>[]</default>
-      <summary>Exclude Window Types</summary>
+    <key name="window-types" type="as">
+      <choices>
+        <choice value='NORMAL'/>
+        <choice value='DESKTOP'/>
+        <choice value='DOCK'/>
+        <choice value='DIALOG'/>
+        <choice value='MODAL_DIALOG'/>
+        <choice value='TOOLBAR'/>
+        <choice value='MENU'/>
+        <choice value='UTILITY'/>
+        <choice value='SPLASHSCREEN'/>
+        <choice value='DROPDOWN_MENU'/>
+        <choice value='POPUP_MENU'/>
+        <choice value='TOOLTIP'/>
+        <choice value='NOTIFICATION'/>
+        <choice value='COMBO'/>
+        <choice value='DND'/>
+        <choice value='OVERRIDE_OTHER'/>
+      </choices>
+      <default>['NORMAL']</default>
+      <summary>Window Types</summary>
       <description>
-        Do not apply animations to windows of the specified types.
+        Apply animations to windows of the specified types.
       </description>
     </key>
   </schema>
