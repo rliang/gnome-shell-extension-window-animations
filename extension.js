@@ -29,12 +29,13 @@ function doDestroy(actor) {
 }
 
 let _enabled = false;
+let _allowed = true;
 
 function doSizeChanged(actor) {
   const ra = _oldrects[getId(actor)];
   const rb = actor.meta_window.get_frame_rect();
   _oldrects[getId(actor)] = rb;
-  if (!_enabled || !ra || !isValid(actor))
+  if (!_enabled || !_allowed || !ra || !isValid(actor))
     return;
   Tweener.addTween(actor, {
     transition: settings.get_string('animation-transition'),
@@ -68,4 +69,6 @@ function init() {
   global.window_manager.connect('map', (_, actor) => doMap(actor));
   global.window_manager.connect('destroy', (_, actor) => doDestroy(actor));
   global.window_manager.connect('size-changed', (_, actor) => doSizeChanged(actor));
+  global.display.connect('grab-op-begin', () => _allowed = false);
+  global.display.connect('grab-op-end', () => _allowed = true);
 }
