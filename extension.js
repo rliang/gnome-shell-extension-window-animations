@@ -9,7 +9,7 @@ const settings = new Gio.Settings({
   settings_schema: SchemaSource.lookup(Me.metadata['settings-schema'], true)
 });
 
-const _oldrects = {};
+const _state = {};
 
 function getId(actor) {
   return actor.meta_window.get_stable_sequence();
@@ -21,21 +21,24 @@ function isValid(actor) {
 }
 
 function doMap(actor) {
-  _oldrects[getId(actor)] = actor.meta_window.get_frame_rect();
+  _state[getId(actor)] = {frame: actor.meta_window.get_frame_rect(), ready: false};
 }
 
 function doDestroy(actor) {
-  delete _oldrects[getId(actor)];
+  delete _state[getId(actor)];
 }
 
 let _enabled = false;
 let _allowed = true;
 
 function doSizeChanged(actor) {
-  const ra = _oldrects[getId(actor)];
-  const rb = actor.meta_window.get_frame_rect();
-  _oldrects[getId(actor)] = rb;
-  if (!_enabled || !_allowed || !ra || !isValid(actor))
+  const state = _state[getId(actor)];
+  const r1 = state.frame;
+  const r2 = actor.meta_window.get_frame_rect();
+  state.frame = r2;
+  if (!state.ready)
+    return state.ready = true;
+  if (!_enabled || !_allowed || !state.ready || !r1 || !isValid(actor))
     return;
   Tweener.addTween(actor, {
     transition: settings.get_string('animation-transition'),
@@ -44,15 +47,15 @@ function doSizeChanged(actor) {
     scale_y: 1,
     translation_x: 0,
     translation_y: 0,
-    onStart: (actor, ra, rb) => {
-      if ((actor.translation_x = ra.x - rb.x) > 0)
-        actor.translation_x -= (rb.width - ra.width);
-      if ((actor.translation_y = ra.y - rb.y) > 0)
-        actor.translation_y -= (rb.height - ra.height);
-      actor.set_pivot_point(rb.x >= ra.x ? 0 : 1, rb.y >= ra.y ? 0 : 1);
-      actor.set_scale(ra.width / rb.width, ra.height / rb.height);
+    onStart: (actor, r1, r2) => {
+      if ((actor.translation_x = r1.x - r2.x) > 0)
+        actor.translation_x -= (r2.width - r1.width);
+      if ((actor.translation_y = r1.y - r2.y) > 0)
+        actor.translation_y -= (r2.height - r1.height);
+      actor.set_pivot_point(r2.x >= r1.x ? 0 : 1, r2.y >= r1.y ? 0 : 1);
+      actor.set_scale(r1.width / r2.width, r1.height / r2.height);
     },
-    onStartParams: [actor, ra, rb]
+    onStartParams: [actor, r1, r2]
   });
 }
 
