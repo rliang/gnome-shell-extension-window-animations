@@ -21,7 +21,7 @@ function isValid(actor) {
 }
 
 function doMap(actor) {
-  _state[getId(actor)] = {frame: actor.meta_window.get_frame_rect(), ready: false};
+  _state[getId(actor)] = {frame: actor.meta_window.get_frame_rect()};
 }
 
 function doDestroy(actor) {
@@ -33,12 +33,12 @@ let _allowed = true;
 
 function doSizeChanged(actor) {
   const state = _state[getId(actor)];
+  if (!state)
+    return;
   const r1 = state.frame;
   const r2 = actor.meta_window.get_frame_rect();
   state.frame = r2;
-  if (!state.ready)
-    return state.ready = true;
-  if (!_enabled || !_allowed || !state.ready || !r1 || !isValid(actor))
+  if (!_enabled || !_allowed || !r1 || !isValid(actor))
     return;
   Tweener.addTween(actor, {
     transition: settings.get_string('animation-transition'),
